@@ -19,7 +19,7 @@
 
   roles:
      - {
-        role: "sa-sql-serverr"
+        role: "sa-sql-server"
        }
 
   tasks:
