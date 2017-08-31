@@ -1,7 +1,7 @@
 ---
 
   - name: MSSQL Server | Check installed
-    shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA-P {{mssql_sa_password}} -Q "SELECT @@VERSION" 2>/dev/null"
+    shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA-P {{mssql_sa_password}} -Q \"SELECT @@VERSION\" 2>/dev/null"
     become: yes
     register: mssql_present
     ignore_errors: yes
@@ -43,6 +43,12 @@
     tags:
       - mssql
 
+  - name: MSSQL Server | Ensure SQL Server stopped before configuration
+    service: name="mssql-server" enabled="yes" state="stopped"
+    become: yes
+    tags:
+      - mssql
+
   - name: MSSQL Server | Running mssql-conf setup...
     shell: /opt/mssql/bin/mssql-conf -n setup accept-eula
     environment:
@@ -53,8 +59,11 @@
     tags:
       - mssql
 
+
   - name: MSSQL Server | Installing mssql-tools and unixODBC developer
     apt: pkg="{{item}}" state="present"
+    environment:
+      ACCEPT_EULA: Y
     become: yes
     with_items:
       - mssql-tools
@@ -98,7 +107,7 @@
         - mssql
 
     - name: MSSQL Server | Check installed version
-      shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA-P {{mssql_sa_password}} -Q "SELECT @@VERSION" 2>/dev/null"
+      shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA-P {{mssql_sa_password}} -Q \"SELECT @@VERSION\" 2>/dev/null"
       become: yes
       register: mssql_version_result
       until: mssql_version_result.rc == 0
