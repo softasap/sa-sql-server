@@ -56,6 +56,7 @@
       MSSQL_SA_PASSWORD: "{{mssql_sa_password}}"
       MSSQL_PID: "{{mssql_pid}}"
     become: yes
+    when: docker_test is not defined    
     when: mssql_present | failed
     tags:
       - mssql
