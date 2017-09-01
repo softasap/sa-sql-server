@@ -19,7 +19,14 @@ Simple
 ```YAML
   roles:
     - {
-        role: "sa-sql-server"
+        role: "sa-sql-server",
+        # Password for the SA user (required)
+        mssql_sa_password: "YourStrong1Passw0rd",
+
+        # Product ID of the version of SQL server you're installing
+        # Must be evaluation, developer, express, web, standard, enterprise, or your 25 digit product key
+        # Defaults to developer
+        mssql_pid: developer
       }
 ```
 
@@ -29,7 +36,25 @@ Advanced:
 ```YAML
   roles:
   - {
-      role: "sa-sql-server"
+      role: "sa-sql-server",
+      # Password for the SA user (required)
+      mssql_sa_password: "YourStrong1Passw0rd",
+
+      # Product ID of the version of SQL server you're installing
+      # Must be evaluation, developer, express, web, standard, enterprise, or your 25 digit product key
+      # Defaults to developer
+      mssql_pid: developer,
+
+      # Install SQL Server Agent (recommended)
+      option_sql_install_agent: true,
+
+      # Install SQL Server Full Text Search (optional)
+      option_sql_install_fulltext: false,
+
+      # Create an additional user with sysadmin privileges (optional)
+      option_sql_install_user: true,
+      sql_install_user: user,
+      sql_install_user_password: "YourStrong1Passw0rd"
     }
 ```
 
