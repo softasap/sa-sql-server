@@ -1,9 +1,10 @@
 ---
 
   - name: MSSQL Server | Check installed
-    shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA-P {{mssql_sa_password}} -Q \"SELECT @@VERSION\" 2>/dev/null"
+    shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA-P {{ mssql_sa_password }} -Q \"SELECT @@VERSION\" 2>/dev/null"
     become: yes
     register: mssql_present
+    changed_when: False
     ignore_errors: yes
     tags:
       - mssql
@@ -12,7 +13,7 @@
   - name: MSSQL Server | Add key
     apt_key: url="https://packages.microsoft.com/keys/microsoft.asc" state=present
     become: yes
-    when: mssql_present | failed
+    when: mssql_present is failed
     tags:
       - mssql
 
@@ -22,7 +23,7 @@
       state: present
       filename: 'mssql-server'
     become: yes
-    when: mssql_present | failed
+    when: mssql_present is failed
     tags:
       - mssql
 
@@ -32,14 +33,14 @@
       state: present
       filename: 'prod'
     become: yes
-    when: mssql_present | failed
+    when: mssql_present is failed
     tags:
       - mssql
 
   - name: MSSQL Server | Install mssql-server packages
     apt: pkg="mssql-server" state="present"
     become: yes
-    when: mssql_present | failed
+    when: mssql_present is failed
     tags:
       - mssql
 
@@ -53,41 +54,45 @@
   - name: MSSQL Server | Running mssql-conf setup...
     shell: /opt/mssql/bin/mssql-conf -n setup accept-eula
     environment:
-      MSSQL_SA_PASSWORD: "{{mssql_sa_password}}"
-      MSSQL_PID: "{{mssql_pid}}"
+      MSSQL_SA_PASSWORD: "{{ mssql_sa_password }}"
+      MSSQL_PID: "{{ mssql_pid }}"
     become: yes
-    when: docker_test is not defined and mssql_present | failed
+    when: docker_test is not defined and mssql_present is failed
     tags:
       - mssql
+      - skip_ansible_lint
 
   - name: MSSQL Server | Installing mssql-tools and unixODBC developer
-    apt: pkg="{{item}}" state="present"
+    apt:
+      pkg:
+        - mssql-tools
+        - unixodbc-dev
+      state: present
     environment:
       ACCEPT_EULA: Y
     become: yes
-    with_items:
-      - mssql-tools
-      - unixodbc-dev
-    when: mssql_present | failed
+    when: mssql_present os failed
     tags:
       - mssql
 
   - include: use/__add_to_path.yml extra_path="/opt/mssql-tools/bin"
 
   - name: MSSQL Server | Installing SQL Server Agent...
-    apt: pkg="{{item}}" state="present"
+    apt:
+      pkg:
+        - mssql-server-agent
+      state: present
     become: yes
-    with_items:
-      - mssql-server-agent
     when: option_sql_install_agent
     tags:
       - mssql
 
   - name: MSSQL Server | Installing SQL Server Full-Text Search...
-    apt: pkg="{{item}}" state="present"
+    apt:
+      pkg:
+        - mssql-server-fts
+      state: present
     become: yes
-    with_items:
-      - mssql-server-fts
     when: option_sql_install_fulltext
     tags:
       - mssql
@@ -107,7 +112,7 @@
         - mssql
 
     - name: MSSQL Server | Check installed version
-      shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P {{mssql_sa_password}} -Q \"SELECT @@VERSION\""
+      shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P {{ mssql_sa_password }} -Q \"SELECT @@VERSION\""
       become: yes
       register: mssql_version_result
       until: mssql_version_result.rc == 0
@@ -115,11 +120,12 @@
       delay: 10
       tags:
         - mssql
+        - skip_ansible_lint
 
-    - name: MSSQL Server | Creating user {{sql_install_user}}
-      shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P {{mssql_sa_password}} -Q \"CREATE LOGIN [{{sql_install_user}}] WITH PASSWORD=N'{{sql_install_user_password}}', DEFAULT_DATABASE=[master], CHECK_EXPIRATION=ON, CHECK_POLICY=ON; ALTER SERVER ROLE [sysadmin] ADD MEMBER [{{sql_install_user}}]\""
+    - name: MSSQL Server | Creating user {{ sql_install_user }}
+      shell: "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P {{ mssql_sa_password }} -Q \"CREATE LOGIN [{{ sql_install_user }}] WITH PASSWORD=N'{{ sql_install_user_password }}', DEFAULT_DATABASE=[master], CHECK_EXPIRATION=ON, CHECK_POLICY=ON; ALTER SERVER ROLE [sysadmin] ADD MEMBER [{{ sql_install_user }}]\""
       become: yes
       tags:
         - mssql
 
-    when: docker_test is not defined and mssql_present | failed
+    when: docker_test is not defined and mssql_present is failed
